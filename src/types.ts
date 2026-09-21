@@ -71,3 +71,14 @@ export interface TemplateUpdates {
   name?: string;
   items?: TemplateItem[];
 }
+
+export interface CourseConfig {
+  templateId: string;
+  templateName: string;
+  templateSnapshot: Template;
+  courseName: string;
+  students: Student[];
+  startDate: string;
+  endDate: string;
+  extraDaysOff: string[];
+}
