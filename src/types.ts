@@ -54,3 +54,20 @@ export interface ScheduleInputs {
   courseDates: string[];
   daysOff: string[];
 }
+
+export interface NamedTemplate {
+  id: string;
+  name: string;
+  items: TemplateItem[];
+}
+
+export interface AppStore {
+  templates: NamedTemplate[];
+  instructors: string[];
+  simulators: string[];
+}
+
+export interface TemplateUpdates {
+  name?: string;
+  items?: TemplateItem[];
+}
