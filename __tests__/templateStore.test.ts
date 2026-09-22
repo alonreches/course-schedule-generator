@@ -130,3 +130,53 @@ describe('templateStore round-trip', () => {
     expect(reloaded.templates[0].items.map(i => i.name)).toEqual(['C', 'A', 'B'])
   })
 })
+
+describe('import/export round-trip', () => {
+  it('export then import into fresh store produces identical template', () => {
+    const store1 = createTemplateStore(tmpDir)
+    const original = store1.createTemplate('Flight Plan')
+    store1.updateTemplate(original.id, {
+      items: [
+        { name: 'BSP-01', type: 'run' },
+        { name: 'BSP-02', type: 'assessment' },
+        { name: 'BSP-03', type: 'run' },
+      ],
+    })
+
+    const exported = store1.exportTemplate(original.id)
+    expect(exported).not.toBeNull()
+
+    const tmpDir2 = fs.mkdtempSync(path.join(os.tmpdir(), 'templateStore-test2-'))
+    try {
+      const store2 = createTemplateStore(tmpDir2)
+      const imported = store2.importTemplate(exported!.name, exported!.items)
+
+      expect(imported.name).toBe('Flight Plan')
+      expect(imported.items).toEqual([
+        { name: 'BSP-01', type: 'run' },
+        { name: 'BSP-02', type: 'assessment' },
+        { name: 'BSP-03', type: 'run' },
+      ])
+      expect(store2.getAll().templates).toHaveLength(1)
+    } finally {
+      fs.rmSync(tmpDir2, { recursive: true, force: true })
+    }
+  })
+
+  it('exportTemplate returns null for unknown id', () => {
+    const store = createTemplateStore(tmpDir)
+    expect(store.exportTemplate('no-such-id')).toBeNull()
+  })
+
+  it('importTemplate preserves item order exactly', () => {
+    const store = createTemplateStore(tmpDir)
+    const items = [
+      { name: 'Z', type: 'run' as const },
+      { name: 'A', type: 'assessment' as const },
+      { name: 'M', type: 'run' as const },
+    ]
+    const t = store.importTemplate('Ordered Import', items)
+    const all = store.getAll()
+    expect(all.templates.find(x => x.id === t.id)!.items).toEqual(items)
+  })
+})

@@ -56,6 +56,14 @@ export default function TemplatesScreen() {
           await refresh()
           if (copy) setSelectedId(copy.id)
         }}
+        onExport={window.api.exportTemplate}
+        onImport={async () => {
+          const result = await window.api.importTemplate()
+          if (result.outcome === 'imported') {
+            await refresh()
+            setSelectedId(result.template.id)
+          }
+        }}
       />
       <div className="templates-right">
         {selected ? (
@@ -95,14 +103,19 @@ interface TemplateListProps {
   onAdd: () => void
   onDelete: (id: string) => void
   onDuplicate: (id: string) => void
+  onExport: (id: string) => void
+  onImport: () => void
 }
 
-function TemplateList({ templates, selectedId, onSelect, onAdd, onDelete, onDuplicate }: TemplateListProps) {
+function TemplateList({ templates, selectedId, onSelect, onAdd, onDelete, onDuplicate, onExport, onImport }: TemplateListProps) {
   return (
     <div className="template-list">
       <div className="template-list-header">
         <span className="section-heading">Templates</span>
-        <button className="btn-icon" onClick={onAdd} title="New template">+</button>
+        <div className="template-list-header-actions">
+          <button className="btn-icon" onClick={onImport} title="Import template">↓</button>
+          <button className="btn-icon" onClick={onAdd} title="New template">+</button>
+        </div>
       </div>
       <ul className="template-list-items">
         {templates.map(t => (
@@ -113,6 +126,11 @@ function TemplateList({ templates, selectedId, onSelect, onAdd, onDelete, onDupl
           >
             <span className="template-list-name">{t.name}</span>
             <span className="template-list-actions">
+              <button
+                className="btn-icon"
+                title="Export"
+                onClick={(e) => { e.stopPropagation(); onExport(t.id) }}
+              >↑</button>
               <button
                 className="btn-icon"
                 title="Duplicate"

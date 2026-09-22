@@ -1,4 +1,4 @@
-import type { AppStore, NamedTemplate, ProjectFile, TemplateUpdates } from './types'
+import type { AppStore, NamedTemplate, ProjectFile, TemplateUpdates, TemplateImportOutcome } from './types'
 
 declare global {
   interface Window {
@@ -14,6 +14,8 @@ declare global {
       addSimulator(name: string): Promise<void>
       renameSimulator(index: number, name: string): Promise<void>
       removeSimulator(index: number): Promise<void>
+      exportTemplate(id: string): Promise<{ filePath: string } | null>
+      importTemplate(): Promise<{ outcome: 'imported'; template: NamedTemplate } | { outcome: Exclude<TemplateImportOutcome, 'imported'> }>
       saveProject(filePath: string, data: ProjectFile): Promise<void>
       saveAsProject(data: ProjectFile): Promise<{ filePath: string } | null>
       openProject(): Promise<{ filePath: string; data: ProjectFile } | null>

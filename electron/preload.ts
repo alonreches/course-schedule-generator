@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { IpcRendererEvent } from 'electron'
-import type { AppStore, NamedTemplate, ProjectFile, TemplateUpdates } from '../src/types'
+import type { AppStore, NamedTemplate, ProjectFile, TemplateUpdates, TemplateImportOutcome } from '../src/types'
 
 contextBridge.exposeInMainWorld('api', {
   getAll: (): Promise<AppStore> => ipcRenderer.invoke('store:getAll'),
@@ -17,6 +17,11 @@ contextBridge.exposeInMainWorld('api', {
   renameSimulator: (index: number, name: string): Promise<void> =>
     ipcRenderer.invoke('store:renameSimulator', index, name),
   removeSimulator: (index: number): Promise<void> => ipcRenderer.invoke('store:removeSimulator', index),
+
+  exportTemplate: (id: string): Promise<{ filePath: string } | null> =>
+    ipcRenderer.invoke('template:export', id),
+  importTemplate: (): Promise<{ outcome: 'imported'; template: NamedTemplate } | { outcome: Exclude<TemplateImportOutcome, 'imported'> }> =>
+    ipcRenderer.invoke('template:import'),
 
   saveProject: (filePath: string, data: ProjectFile): Promise<void> =>
     ipcRenderer.invoke('project:save', filePath, data),

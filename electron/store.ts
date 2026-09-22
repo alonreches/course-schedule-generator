@@ -109,5 +109,20 @@ export function createTemplateStore(dir: string) {
       data.simulators.splice(index, 1)
       save(dir, data)
     },
+
+    exportTemplate(id: string): { name: string; items: NamedTemplate['items'] } | null {
+      const data = load(dir)
+      const t = data.templates.find(t => t.id === id)
+      if (!t) return null
+      return { name: t.name, items: t.items.map(i => ({ ...i })) }
+    },
+
+    importTemplate(name: string, items: NamedTemplate['items']): NamedTemplate {
+      const data = load(dir)
+      const template: NamedTemplate = { id: newId(), name, items: items.map(i => ({ ...i })) }
+      data.templates.push(template)
+      save(dir, data)
+      return template
+    },
   }
 }

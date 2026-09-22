@@ -95,3 +95,5 @@ export interface ProjectFile {
   courseConfig: CourseConfig;
   schedule: CourseSchedule;
 }
+
+export type TemplateImportOutcome = 'imported' | 'cancelled' | 'error'
