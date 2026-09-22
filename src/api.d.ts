@@ -1,4 +1,4 @@
-import type { AppStore, NamedTemplate, TemplateUpdates } from './types'
+import type { AppStore, NamedTemplate, ProjectFile, TemplateUpdates } from './types'
 
 declare global {
   interface Window {
@@ -14,6 +14,14 @@ declare global {
       addSimulator(name: string): Promise<void>
       renameSimulator(index: number, name: string): Promise<void>
       removeSimulator(index: number): Promise<void>
+      saveProject(filePath: string, data: ProjectFile): Promise<void>
+      saveAsProject(data: ProjectFile): Promise<{ filePath: string } | null>
+      openProject(): Promise<{ filePath: string; data: ProjectFile } | null>
+      confirmUnsaved(): Promise<number>
+      onMenuNew(cb: () => void): () => void
+      onMenuOpen(cb: () => void): () => void
+      onMenuSave(cb: () => void): () => void
+      onMenuSaveAs(cb: () => void): () => void
     }
   }
 }

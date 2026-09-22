@@ -89,3 +89,9 @@ export interface CourseConfig {
   endDate: string;
   extraDaysOff: string[];
 }
+
+export interface ProjectFile {
+  version: 1;
+  courseConfig: CourseConfig;
+  schedule: CourseSchedule;
+}

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { AppStore, NamedTemplate, TemplateUpdates } from '../src/types'
+import type { IpcRendererEvent } from 'electron'
+import type { AppStore, NamedTemplate, ProjectFile, TemplateUpdates } from '../src/types'
 
 contextBridge.exposeInMainWorld('api', {
   getAll: (): Promise<AppStore> => ipcRenderer.invoke('store:getAll'),
@@ -16,4 +17,34 @@ contextBridge.exposeInMainWorld('api', {
   renameSimulator: (index: number, name: string): Promise<void> =>
     ipcRenderer.invoke('store:renameSimulator', index, name),
   removeSimulator: (index: number): Promise<void> => ipcRenderer.invoke('store:removeSimulator', index),
+
+  saveProject: (filePath: string, data: ProjectFile): Promise<void> =>
+    ipcRenderer.invoke('project:save', filePath, data),
+  saveAsProject: (data: ProjectFile): Promise<{ filePath: string } | null> =>
+    ipcRenderer.invoke('project:saveAs', data),
+  openProject: (): Promise<{ filePath: string; data: ProjectFile } | null> =>
+    ipcRenderer.invoke('project:open'),
+  confirmUnsaved: (): Promise<number> =>
+    ipcRenderer.invoke('dialog:confirmUnsaved'),
+
+  onMenuNew: (cb: () => void): (() => void) => {
+    const handler = (_e: IpcRendererEvent) => cb()
+    ipcRenderer.on('menu:new', handler)
+    return () => ipcRenderer.removeListener('menu:new', handler)
+  },
+  onMenuOpen: (cb: () => void): (() => void) => {
+    const handler = (_e: IpcRendererEvent) => cb()
+    ipcRenderer.on('menu:open', handler)
+    return () => ipcRenderer.removeListener('menu:open', handler)
+  },
+  onMenuSave: (cb: () => void): (() => void) => {
+    const handler = (_e: IpcRendererEvent) => cb()
+    ipcRenderer.on('menu:save', handler)
+    return () => ipcRenderer.removeListener('menu:save', handler)
+  },
+  onMenuSaveAs: (cb: () => void): (() => void) => {
+    const handler = (_e: IpcRendererEvent) => cb()
+    ipcRenderer.on('menu:saveAs', handler)
+    return () => ipcRenderer.removeListener('menu:saveAs', handler)
+  },
 })

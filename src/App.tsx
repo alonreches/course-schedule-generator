@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './index.css'
 import TemplatesScreen from './TemplatesScreen'
 import CourseWizard from './CourseWizard'
@@ -21,6 +21,10 @@ function weekdaysInRange(startDate: string, endDate: string): string[] {
   return dates
 }
 
+function snapshot(schedule: CourseSchedule | null, courseConfig: CourseConfig | null): string {
+  return JSON.stringify({ schedule, courseConfig })
+}
+
 type AppContent = 'templates' | 'schedule' | 'stats' | null
 
 export default function App() {
@@ -29,17 +33,138 @@ export default function App() {
   const [wizardTemplates, setWizardTemplates] = useState<NamedTemplate[]>([])
 
   const [schedule, setSchedule] = useState<CourseSchedule | null>(null)
+  const [courseConfig, setCourseConfig] = useState<CourseConfig | null>(null)
   const [scheduleStudents, setScheduleStudents] = useState<Student[]>([])
   const [activeWeekIndex, setActiveWeekIndex] = useState(0)
   const [instructors, setInstructors] = useState<string[]>([])
   const [simulators, setSimulators] = useState<string[]>([])
+  const [projectPath, setProjectPath] = useState<string | null>(null)
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
 
-  async function handleNewCourse() {
+  const isDirty = schedule !== null && snapshot(schedule, courseConfig) !== savedSnapshot
+
+  const scheduleRef = useRef(schedule)
+  scheduleRef.current = schedule
+  const courseConfigRef = useRef(courseConfig)
+  courseConfigRef.current = courseConfig
+  const projectPathRef = useRef(projectPath)
+  projectPathRef.current = projectPath
+  const isDirtyRef = useRef(isDirty)
+  isDirtyRef.current = isDirty
+  const instructorsRef = useRef(instructors)
+  instructorsRef.current = instructors
+  const simulatorsRef = useRef(simulators)
+  simulatorsRef.current = simulators
+
+  useEffect(() => {
+    const basename = projectPath ? projectPath.split(/[\\/]/).pop() ?? projectPath : null
+    document.title = basename
+      ? isDirty ? `*${basename}` : basename
+      : isDirty ? '*Untitled' : 'Course Scheduler'
+  }, [projectPath, isDirty])
+
+  async function checkUnsaved(): Promise<boolean> {
+    if (!isDirtyRef.current) return true
+    const response = await window.api.confirmUnsaved()
+    if (response === 0) {
+      await handleSave()
+      return true
+    } else if (response === 1) {
+      return true
+    }
+    return false
+  }
+
+  async function handleSave() {
+    const sched = scheduleRef.current
+    const config = courseConfigRef.current
+    const filePath = projectPathRef.current
+    if (!sched || !config) return
+    if (filePath) {
+      await window.api.saveProject(filePath, { version: 1, courseConfig: config, schedule: sched })
+      setSavedSnapshot(snapshot(sched, config))
+    } else {
+      await handleSaveAs()
+    }
+  }
+
+  async function handleSaveAs() {
+    const sched = scheduleRef.current
+    const config = courseConfigRef.current
+    if (!sched || !config) return
+    const result = await window.api.saveAsProject({ version: 1, courseConfig: config, schedule: sched })
+    if (result) {
+      setProjectPath(result.filePath)
+      setSavedSnapshot(snapshot(sched, config))
+    }
+  }
+
+  async function handleOpen() {
+    const canProceed = await checkUnsaved()
+    if (!canProceed) return
+    const result = await window.api.openProject()
+    if (!result) return
+    const { filePath, data } = result
+    const config = data.courseConfig
+    const sched = data.schedule
+    setCourseConfig(config)
+    setSchedule(sched)
+    setScheduleStudents(config.students)
+    setProjectPath(filePath)
+    setSavedSnapshot(snapshot(sched, config))
+    setActiveWeekIndex(0)
+    setContent('schedule')
+    const appData = await window.api.getAll()
+    setInstructors(appData.instructors)
+    setSimulators(appData.simulators)
+  }
+
+  async function handleNew() {
+    const canProceed = await checkUnsaved()
+    if (!canProceed) return
+    setSchedule(null)
+    setCourseConfig(null)
+    setScheduleStudents([])
+    setProjectPath(null)
+    setSavedSnapshot(null)
+    setContent(null)
+    setActiveWeekIndex(0)
+    await openWizard()
+  }
+
+  useEffect(() => {
+    const unsubNew = window.api.onMenuNew(handleNew)
+    const unsubOpen = window.api.onMenuOpen(handleOpen)
+    const unsubSave = window.api.onMenuSave(handleSave)
+    const unsubSaveAs = window.api.onMenuSaveAs(handleSaveAs)
+    return () => {
+      unsubNew()
+      unsubOpen()
+      unsubSave()
+      unsubSaveAs()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function openWizard() {
     const data = await window.api.getAll()
     setWizardTemplates(data.templates)
     setInstructors(data.instructors)
     setSimulators(data.simulators)
     setShowWizard(true)
+  }
+
+  async function handleNewCourse() {
+    const canProceed = await checkUnsaved()
+    if (!canProceed) return
+    setSchedule(null)
+    setCourseConfig(null)
+    setScheduleStudents([])
+    setProjectPath(null)
+    setSavedSnapshot(null)
+    setContent(null)
+    setActiveWeekIndex(0)
+    await openWizard()
   }
 
   function handleWizardComplete(config: CourseConfig) {
@@ -50,8 +175,10 @@ export default function App() {
       courseDates,
       daysOff: config.extraDaysOff,
     })
+    setCourseConfig(config)
     setSchedule(generated)
     setScheduleStudents(config.students)
+    setSavedSnapshot(null)
     setActiveWeekIndex(0)
     setContent('schedule')
     setShowWizard(false)

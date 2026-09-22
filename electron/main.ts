@@ -2,8 +2,10 @@ import { app, BrowserWindow, Menu } from 'electron'
 import path from 'path'
 import { registerIpcHandlers } from './ipc'
 
+let win: BrowserWindow | null = null
+
 function createWindow(): void {
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
@@ -17,11 +19,11 @@ function createWindow(): void {
     {
       label: 'File',
       submenu: [
-        { label: 'New', accelerator: 'CmdOrCtrl+N', click: () => undefined },
-        { label: 'Open...', accelerator: 'CmdOrCtrl+O', click: () => undefined },
+        { label: 'New', accelerator: 'CmdOrCtrl+N', click: () => win?.webContents.send('menu:new') },
+        { label: 'Open...', accelerator: 'CmdOrCtrl+O', click: () => win?.webContents.send('menu:open') },
         { type: 'separator' },
-        { label: 'Save', accelerator: 'CmdOrCtrl+S', click: () => undefined },
-        { label: 'Save As...', accelerator: 'CmdOrCtrl+Shift+S', click: () => undefined },
+        { label: 'Save', accelerator: 'CmdOrCtrl+S', click: () => win?.webContents.send('menu:save') },
+        { label: 'Save As...', accelerator: 'CmdOrCtrl+Shift+S', click: () => win?.webContents.send('menu:saveAs') },
       ],
     },
   ])
