@@ -3,6 +3,7 @@ import './index.css'
 import TemplatesScreen from './TemplatesScreen'
 import CourseWizard from './CourseWizard'
 import ScheduleView from './ScheduleView'
+import StatsTab from './StatsTab'
 import { scheduleGenerator } from './scheduleGenerator'
 import type { CircuitDay, CourseConfig, CourseSchedule, NamedTemplate, SlotAssignment, Student } from './types'
 
@@ -20,7 +21,7 @@ function weekdaysInRange(startDate: string, endDate: string): string[] {
   return dates
 }
 
-type AppContent = 'templates' | 'schedule' | null
+type AppContent = 'templates' | 'schedule' | 'stats' | null
 
 export default function App() {
   const [content, setContent] = useState<AppContent>(null)
@@ -117,6 +118,10 @@ export default function App() {
     setContent(c => c === 'templates' ? fallback : 'templates')
   }
 
+  function handleStatsTabClick() {
+    setContent('stats')
+  }
+
   return (
     <div className="app">
       <div role="tablist" className="tab-bar" aria-label="Navigation tabs">
@@ -145,6 +150,16 @@ export default function App() {
             <span className="tab-bar-empty">No courses open</span>
           )
         )}
+        {schedule && (
+          <button
+            role="tab"
+            className={`tab${content === 'stats' ? ' tab-active' : ''}`}
+            aria-selected={content === 'stats'}
+            onClick={handleStatsTabClick}
+          >
+            Stats
+          </button>
+        )}
         <button className="tab tab-new-course" onClick={handleNewCourse}>
           + New Course
         </button>
@@ -159,6 +174,13 @@ export default function App() {
             simulators={simulators}
             onSlotChange={(di, ci, si, patch) => handleSlotChange(activeWeekIndex, di, ci, si, patch)}
             onCircuitDayChange={(di, ci, patch) => handleCircuitDayChange(activeWeekIndex, di, ci, patch)}
+          />
+        )}
+        {content === 'stats' && schedule && (
+          <StatsTab
+            schedule={schedule}
+            students={scheduleStudents}
+            instructors={instructors}
           />
         )}
         {content === null && (
