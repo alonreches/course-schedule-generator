@@ -493,6 +493,67 @@ body {
   width: 100%;
 }
 
+.schedule-circuit-edited {
+  border-top: 2px solid #4e8ccd;
+}
+
+.schedule-circuit-type {
+  border: 1px solid #555;
+  border-radius: 3px;
+  display: flex;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+
+.schedule-type-btn {
+  background: none;
+  border: none;
+  color: #9e9e9e;
+  cursor: pointer;
+  flex: 1;
+  font-size: 10px;
+  padding: 2px 0;
+}
+
+.schedule-type-btn:hover {
+  background: #3e3e3e;
+  color: #d4d4d4;
+}
+
+.schedule-type-run {
+  background: #1a3a1a;
+  color: #89d185;
+}
+
+.schedule-type-assessment {
+  background: #2a2a0a;
+  color: #dcdcaa;
+}
+
+.schedule-slot-edited {
+  border-left: 2px solid #4e8ccd;
+  margin-left: -2px;
+  padding-left: 2px;
+}
+
+.schedule-slot-student {
+  flex: 1;
+  font-size: 11px;
+  min-width: 0;
+  padding: 1px 4px;
+}
+
+.schedule-slot-item {
+  font-size: 11px;
+  padding: 1px 4px;
+  width: 54px;
+}
+
+.schedule-slot-activity {
+  flex-shrink: 0;
+  font-size: 10px;
+}
+
 .schedule-empty {
   color: #6e6e6e;
   font-size: 13px;

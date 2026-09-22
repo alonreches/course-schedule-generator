@@ -4,7 +4,7 @@ import TemplatesScreen from './TemplatesScreen'
 import CourseWizard from './CourseWizard'
 import ScheduleView from './ScheduleView'
 import { scheduleGenerator } from './scheduleGenerator'
-import type { CourseConfig, CourseSchedule, NamedTemplate, Student } from './types'
+import type { CircuitDay, CourseConfig, CourseSchedule, NamedTemplate, SlotAssignment, Student } from './types'
 
 function weekdaysInRange(startDate: string, endDate: string): string[] {
   const dates: string[] = []
@@ -60,6 +60,53 @@ export default function App() {
     setShowWizard(false)
   }
 
+  function handleSlotChange(weekIndex: number, dayIndex: number, circuitIndex: number, slotIndex: number, patch: Partial<SlotAssignment>) {
+    setSchedule(prev => {
+      if (!prev) return prev
+      return {
+        weeks: prev.weeks.map((w, wi) =>
+          wi !== weekIndex ? w : {
+            ...w,
+            days: w.days.map((d, di) =>
+              di !== dayIndex ? d : {
+                ...d,
+                circuits: d.circuits.map((c, ci) =>
+                  ci !== circuitIndex ? c : {
+                    ...c,
+                    slots: c.slots.map((s, si) =>
+                      si !== slotIndex ? s : { ...s, ...patch }
+                    ),
+                  }
+                ),
+              }
+            ),
+          }
+        ),
+      }
+    })
+  }
+
+  function handleCircuitDayChange(weekIndex: number, dayIndex: number, circuitIndex: number, patch: Partial<CircuitDay>) {
+    setSchedule(prev => {
+      if (!prev) return prev
+      return {
+        weeks: prev.weeks.map((w, wi) =>
+          wi !== weekIndex ? w : {
+            ...w,
+            days: w.days.map((d, di) =>
+              di !== dayIndex ? d : {
+                ...d,
+                circuits: d.circuits.map((c, ci) =>
+                  ci !== circuitIndex ? c : { ...c, ...patch }
+                ),
+              }
+            ),
+          }
+        ),
+      }
+    })
+  }
+
   function handleWeekTabClick(index: number) {
     setActiveWeekIndex(index)
     setContent('schedule')
@@ -110,6 +157,8 @@ export default function App() {
             students={scheduleStudents}
             instructors={instructors}
             simulators={simulators}
+            onSlotChange={(di, ci, si, patch) => handleSlotChange(activeWeekIndex, di, ci, si, patch)}
+            onCircuitDayChange={(di, ci, patch) => handleCircuitDayChange(activeWeekIndex, di, ci, patch)}
           />
         )}
         {content === null && (

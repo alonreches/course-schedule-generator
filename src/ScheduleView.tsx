@@ -1,35 +1,18 @@
-import { Fragment, useState } from 'react'
-import type { CircuitDay, CourseWeek, Student } from './types'
-
-interface CircuitDayMeta {
-  shift: 'day' | 'night'
-  instructor: string
-  simulator: string
-  notes: string
-}
-
-const DEFAULT_META: CircuitDayMeta = { shift: 'day', instructor: '', simulator: '', notes: '' }
+import { Fragment } from 'react'
+import type { CircuitDay, CourseWeek, SlotAssignment, Student } from './types'
 
 interface Props {
   week: CourseWeek
   students: Student[]
   instructors: string[]
   simulators: string[]
+  onSlotChange: (dayIndex: number, circuitIndex: number, slotIndex: number, patch: Partial<SlotAssignment>) => void
+  onCircuitDayChange: (dayIndex: number, circuitIndex: number, patch: Partial<CircuitDay>) => void
 }
 
-export default function ScheduleView({ week, students, instructors, simulators }: Props) {
-  const [circuitMeta, setCircuitMeta] = useState<Record<string, CircuitDayMeta>>({})
-
+export default function ScheduleView({ week, students, instructors, simulators, onSlotChange, onCircuitDayChange }: Props) {
   const studentMap = new Map(students.map(s => [s.id, s.name]))
-
-  function getMeta(date: string, circuitId: string): CircuitDayMeta {
-    return circuitMeta[`${date}-${circuitId}`] ?? DEFAULT_META
-  }
-
-  function updateMeta(date: string, circuitId: string, patch: Partial<CircuitDayMeta>) {
-    const key = `${date}-${circuitId}`
-    setCircuitMeta(prev => ({ ...prev, [key]: { ...(prev[key] ?? DEFAULT_META), ...patch } }))
-  }
+  const nameToStudent = new Map(students.map(s => [s.name, s]))
 
   if (week.days.length === 0) {
     return <div className="schedule-empty">No active days this week.</div>
@@ -39,6 +22,16 @@ export default function ScheduleView({ week, students, instructors, simulators }
 
   return (
     <div className="schedule-container">
+      <datalist id="schedule-students-list">
+        {students.map(s => <option key={s.id} value={s.name} />)}
+      </datalist>
+      <datalist id="schedule-instructors-list">
+        {instructors.map(ins => <option key={ins} value={ins} />)}
+      </datalist>
+      <datalist id="schedule-simulators-list">
+        {simulators.map(sim => <option key={sim} value={sim} />)}
+      </datalist>
+
       <div
         className="schedule-grid"
         style={{ gridTemplateColumns: `140px repeat(${numCircuits}, 1fr)` }}
@@ -50,7 +43,7 @@ export default function ScheduleView({ week, students, instructors, simulators }
           </div>
         ))}
 
-        {week.days.map(day => (
+        {week.days.map((day, dayIndex) => (
           <Fragment key={day.date}>
             <div className="schedule-day-header">
               <span className="schedule-day-date">{formatDate(day.date)}</span>
@@ -58,15 +51,14 @@ export default function ScheduleView({ week, students, instructors, simulators }
                 {day.type === 'assessment' ? 'Assessment' : 'Run'}
               </span>
             </div>
-            {day.circuits.map(cd => (
+            {day.circuits.map((cd, circuitIndex) => (
               <CircuitBlock
                 key={cd.circuitId}
                 circuitDay={cd}
-                meta={getMeta(day.date, cd.circuitId)}
                 studentMap={studentMap}
-                instructors={instructors}
-                simulators={simulators}
-                onChange={patch => updateMeta(day.date, cd.circuitId, patch)}
+                nameToStudent={nameToStudent}
+                onSlotChange={(si, patch) => onSlotChange(dayIndex, circuitIndex, si, patch)}
+                onChange={patch => onCircuitDayChange(dayIndex, circuitIndex, patch)}
               />
             ))}
           </Fragment>
@@ -85,68 +77,96 @@ function formatDate(dateStr: string): string {
 
 interface CircuitBlockProps {
   circuitDay: CircuitDay
-  meta: CircuitDayMeta
   studentMap: Map<string, string>
-  instructors: string[]
-  simulators: string[]
-  onChange: (patch: Partial<CircuitDayMeta>) => void
+  nameToStudent: Map<string, Student>
+  onSlotChange: (slotIndex: number, patch: Partial<SlotAssignment>) => void
+  onChange: (patch: Partial<CircuitDay>) => void
 }
 
-function CircuitBlock({ circuitDay, meta, studentMap, instructors, simulators, onChange }: CircuitBlockProps) {
+function CircuitBlock({ circuitDay, studentMap, nameToStudent, onSlotChange, onChange }: CircuitBlockProps) {
+  const shift = circuitDay.shift ?? 'day'
+
   return (
-    <div className={`schedule-circuit-block${meta.shift === 'night' ? ' schedule-night' : ''}`}>
+    <div className={`schedule-circuit-block${shift === 'night' ? ' schedule-night' : ''}${circuitDay.edited ? ' schedule-circuit-edited' : ''}`}>
+      <div className="schedule-circuit-type">
+        <button
+          className={`schedule-type-btn${circuitDay.type === 'run' ? ' schedule-type-run' : ''}`}
+          onClick={() => onChange({ type: 'run', edited: true })}
+        >
+          Run
+        </button>
+        <button
+          className={`schedule-type-btn${circuitDay.type === 'assessment' ? ' schedule-type-assessment' : ''}`}
+          onClick={() => onChange({ type: 'assessment', edited: true })}
+        >
+          Assess
+        </button>
+      </div>
       <ul className="schedule-slots">
-        {circuitDay.slots.map((slot, i) => (
-          <li key={i} className="schedule-slot">
-            <span className="schedule-slot-num">{i + 1}</span>
-            <span className="schedule-slot-name">
-              {studentMap.get(slot.studentId) ?? slot.studentId}
-            </span>
-            <span className={`schedule-slot-activity item-type-badge item-type-${slot.itemType}`}>
-              {slot.itemName}
-            </span>
-          </li>
-        ))}
+        {circuitDay.slots.map((slot, i) => {
+          const displayName = slot.studentOverride ?? studentMap.get(slot.studentId) ?? slot.studentId
+          return (
+            <li key={i} className={`schedule-slot${slot.edited ? ' schedule-slot-edited' : ''}`}>
+              <span className="schedule-slot-num">{i + 1}</span>
+              <input
+                className="input-sm schedule-slot-student"
+                list="schedule-students-list"
+                value={displayName}
+                onChange={e => {
+                  const val = e.target.value
+                  const match = nameToStudent.get(val)
+                  if (match) {
+                    onSlotChange(i, { studentId: match.id, studentOverride: undefined, edited: true })
+                  } else {
+                    onSlotChange(i, { studentOverride: val, edited: true })
+                  }
+                }}
+              />
+              <input
+                className="input-sm schedule-slot-item"
+                value={slot.itemName}
+                onChange={e => onSlotChange(i, { itemName: e.target.value, edited: true })}
+              />
+              <span className={`item-type-badge item-type-${slot.itemType} schedule-slot-activity`}>
+                {slot.itemType === 'assessment' ? 'A' : 'R'}
+              </span>
+            </li>
+          )
+        })}
       </ul>
       <div className="schedule-controls">
         <div className="schedule-shift-toggle">
           <button
-            className={`schedule-shift-btn${meta.shift === 'day' ? ' active' : ''}`}
-            onClick={() => onChange({ shift: 'day' })}
+            className={`schedule-shift-btn${shift === 'day' ? ' active' : ''}`}
+            onClick={() => onChange({ shift: 'day', edited: true })}
           >
             Day
           </button>
           <button
-            className={`schedule-shift-btn${meta.shift === 'night' ? ' active' : ''}`}
-            onClick={() => onChange({ shift: 'night' })}
+            className={`schedule-shift-btn${shift === 'night' ? ' active' : ''}`}
+            onClick={() => onChange({ shift: 'night', edited: true })}
           >
             Night
           </button>
         </div>
-        <select
+        <input
           className="input-sm schedule-select"
-          value={meta.instructor}
-          onChange={e => onChange({ instructor: e.target.value })}
-        >
-          <option value="">— Instructor —</option>
-          {instructors.map(ins => (
-            <option key={ins} value={ins}>{ins}</option>
-          ))}
-        </select>
-        <select
+          list="schedule-instructors-list"
+          value={circuitDay.instructor ?? ''}
+          onChange={e => onChange({ instructor: e.target.value, edited: true })}
+          placeholder="— Instructor —"
+        />
+        <input
           className="input-sm schedule-select"
-          value={meta.simulator}
-          onChange={e => onChange({ simulator: e.target.value })}
-        >
-          <option value="">— Simulator —</option>
-          {simulators.map(sim => (
-            <option key={sim} value={sim}>{sim}</option>
-          ))}
-        </select>
+          list="schedule-simulators-list"
+          value={circuitDay.simulator ?? ''}
+          onChange={e => onChange({ simulator: e.target.value, edited: true })}
+          placeholder="— Simulator —"
+        />
         <textarea
           className="input-sm schedule-notes"
-          value={meta.notes}
-          onChange={e => onChange({ notes: e.target.value })}
+          value={circuitDay.notes ?? ''}
+          onChange={e => onChange({ notes: e.target.value, edited: true })}
           placeholder="Notes"
           rows={2}
         />

@@ -24,6 +24,8 @@ export interface SlotAssignment {
   studentId: string;
   itemName: string;
   itemType: ActivityType;
+  studentOverride?: string;
+  edited?: boolean;
 }
 
 export interface CircuitDay {
@@ -31,6 +33,11 @@ export interface CircuitDay {
   circuitLabel: string;
   type: ActivityType;
   slots: SlotAssignment[];
+  shift?: 'day' | 'night';
+  instructor?: string;
+  simulator?: string;
+  notes?: string;
+  edited?: boolean;
 }
 
 export interface CourseDay {
