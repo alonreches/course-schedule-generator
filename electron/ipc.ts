@@ -1,4 +1,5 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron'
+import fs from 'fs'
 import { createTemplateStore } from './store'
 import { saveProjectFile, loadProjectFile } from './projectStore'
 import type { TemplateUpdates, ProjectFile } from '../src/types'
@@ -46,6 +47,18 @@ export function registerIpcHandlers(userDataDir: string): void {
     if (result.canceled || result.filePaths.length === 0) return null
     const data = loadProjectFile(result.filePaths[0])
     return { filePath: result.filePaths[0], data }
+  })
+
+  ipcMain.handle('project:exportHtml', async (_e, html: string) => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (!win) return null
+    const result = await dialog.showSaveDialog(win, {
+      filters: [{ name: 'HTML File', extensions: ['html'] }],
+      defaultPath: 'schedule.html',
+    })
+    if (result.canceled || !result.filePath) return null
+    fs.writeFileSync(result.filePath, html, 'utf-8')
+    return { filePath: result.filePath }
   })
 
   ipcMain.handle('dialog:confirmUnsaved', async () => {

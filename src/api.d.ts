@@ -18,10 +18,12 @@ declare global {
       saveAsProject(data: ProjectFile): Promise<{ filePath: string } | null>
       openProject(): Promise<{ filePath: string; data: ProjectFile } | null>
       confirmUnsaved(): Promise<number>
+      exportHtml(html: string): Promise<{ filePath: string } | null>
       onMenuNew(cb: () => void): () => void
       onMenuOpen(cb: () => void): () => void
       onMenuSave(cb: () => void): () => void
       onMenuSaveAs(cb: () => void): () => void
+      onMenuExportHtml(cb: () => void): () => void
     }
   }
 }

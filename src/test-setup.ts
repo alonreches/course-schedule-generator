@@ -23,10 +23,12 @@ Object.defineProperty(window, 'api', {
     saveAsProject: async () => null,
     openProject: async () => null,
     confirmUnsaved: async () => 2,
+    exportHtml: async () => null,
     onMenuNew: () => () => {},
     onMenuOpen: () => () => {},
     onMenuSave: () => () => {},
     onMenuSaveAs: () => () => {},
+    onMenuExportHtml: () => () => {},
   },
   writable: true,
 })

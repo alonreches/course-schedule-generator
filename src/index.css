@@ -765,3 +765,36 @@ body {
 .stats-table tr:nth-child(even) .stats-td {
   background: #252525;
 }
+
+/* ── Export warning banner ── */
+
+.export-warning-banner {
+  align-items: center;
+  background: #2a2010;
+  border-bottom: 1px solid #6e4e10;
+  color: #e5a050;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 12px;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 8px 16px;
+}
+
+.export-warning-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.export-warning-item {
+  background: #3a2810;
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+
+.export-warning-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
