@@ -8,11 +8,11 @@ interface Props {
 }
 
 export default function StatsTab({ schedule, students, instructors }: Props) {
-  const { byStudent: slotPos, maxPosition } = computeSlotPositionStats(schedule)
+  const { byStudent: slotPos } = computeSlotPositionStats(schedule)
   const { byStudent: shifts } = computeShiftStats(schedule)
   const { byInstructor, unassigned } = computeInstructorStats(schedule)
 
-  const positions = Array.from({ length: maxPosition }, (_, i) => i + 1)
+  const positions = [1, 2, 3, 4, 5, 6]
 
   return (
     <div className="stats-tab">

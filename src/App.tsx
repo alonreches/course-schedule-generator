@@ -150,16 +150,14 @@ export default function App() {
             <span className="tab-bar-empty">No courses open</span>
           )
         )}
-        {schedule && (
-          <button
-            role="tab"
-            className={`tab${content === 'stats' ? ' tab-active' : ''}`}
-            aria-selected={content === 'stats'}
-            onClick={handleStatsTabClick}
-          >
-            Stats
-          </button>
-        )}
+        <button
+          role="tab"
+          className={`tab${content === 'stats' ? ' tab-active' : ''}`}
+          aria-selected={content === 'stats'}
+          onClick={handleStatsTabClick}
+        >
+          Stats
+        </button>
         <button className="tab tab-new-course" onClick={handleNewCourse}>
           + New Course
         </button>
@@ -176,12 +174,10 @@ export default function App() {
             onCircuitDayChange={(di, ci, patch) => handleCircuitDayChange(activeWeekIndex, di, ci, patch)}
           />
         )}
-        {content === 'stats' && schedule && (
-          <StatsTab
-            schedule={schedule}
-            students={scheduleStudents}
-            instructors={instructors}
-          />
+        {content === 'stats' && (
+          schedule
+            ? <StatsTab schedule={schedule} students={scheduleStudents} instructors={instructors} />
+            : <div className="empty-state"><p className="empty-state-msg">No course open.</p><button className="btn btn-large" onClick={handleNewCourse}>New Course</button></div>
         )}
         {content === null && (
           <div className="empty-state">
