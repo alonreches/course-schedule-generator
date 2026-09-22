@@ -8,11 +8,18 @@ function emptyStore(): AppStore {
   return { templates: [], instructors: [], simulators: [] }
 }
 
+function migrate(data: AppStore): AppStore {
+  for (const t of data.templates) {
+    t.items = t.items.map(item => ({ ...item, type: item.type ?? 'run' }))
+  }
+  return data
+}
+
 function load(dir: string): AppStore {
   const file = path.join(dir, STORE_FILE)
   try {
     const raw = fs.readFileSync(file, 'utf-8')
-    return JSON.parse(raw) as AppStore
+    return migrate(JSON.parse(raw) as AppStore)
   } catch {
     return emptyStore()
   }

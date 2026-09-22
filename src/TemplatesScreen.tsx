@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import type { AppStore, NamedTemplate, TemplateItem } from './types'
+import type { ActivityType, AppStore, NamedTemplate, TemplateItem } from './types'
+
+const TYPE_ABBREV: Record<ActivityType, string> = { run: 'R', assessment: 'A' }
+const ACTIVITY_TYPES: ActivityType[] = ['run', 'assessment']
 
 // ── Shared inline-edit hook ───────────────────────────────────────────────────
 
@@ -160,6 +163,7 @@ function TemplateEditor({ template, onChange }: TemplateEditorProps) {
   const [name, setName] = useState(template.name)
   const [prefix, setPrefix] = useState('')
   const [count, setCount] = useState(5)
+  const [itemType, setItemType] = useState<ActivityType>('run')
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dropIndex, setDropIndex] = useState<number | null>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -190,7 +194,7 @@ function TemplateEditor({ template, onChange }: TemplateEditorProps) {
     const padWidth = Math.max(2, String(count).length)
     const newItems = Array.from({ length: count }, (_, i) => ({
       name: `${p}-${String(i + 1).padStart(padWidth, '0')}`,
-      type: 'run' as const,
+      type: itemType,
     }))
     await saveItems([...template.items, ...newItems])
     setPrefix('')
@@ -261,6 +265,18 @@ function TemplateEditor({ template, onChange }: TemplateEditorProps) {
             value={count}
             onChange={e => setCount(Math.max(1, parseInt(e.target.value) || 1))}
           />
+          <div className="item-type-toggle" role="radiogroup" aria-label="Item type">
+            {ACTIVITY_TYPES.map(t => (
+              <button
+                key={t}
+                role="radio"
+                aria-checked={itemType === t}
+                className={`item-type-toggle-btn${itemType === t ? ` active-${t}` : ''}`}
+                onClick={() => setItemType(t)}
+                type="button"
+              >{TYPE_ABBREV[t]}</button>
+            ))}
+          </div>
           <button className="btn" onClick={handleGroupAdd}>Add</button>
         </div>
       </section>
@@ -303,7 +319,7 @@ function TemplateEditor({ template, onChange }: TemplateEditorProps) {
                     {item.name}
                   </span>
                 )}
-                <span className={`item-type-badge item-type-${item.type}`}>{item.type}</span>
+                <span className={`item-type-badge item-type-${item.type}`}>{TYPE_ABBREV[item.type]}</span>
                 <button
                   className="btn-icon btn-danger"
                   title="Remove item"

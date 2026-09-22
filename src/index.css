@@ -328,6 +328,37 @@ body {
   color: #7a0030;
 }
 
+.item-type-toggle {
+  border: 1px solid #cccccc;
+  border-radius: 3px;
+  display: flex;
+  overflow: hidden;
+}
+
+.item-type-toggle-btn {
+  background: none;
+  border: none;
+  color: #666666;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+}
+
+.item-type-toggle-btn:hover {
+  background: #f0f0f0;
+}
+
+.item-type-toggle-btn.active-run {
+  background: #b6d693;
+  color: #2d5a00;
+}
+
+.item-type-toggle-btn.active-assessment {
+  background: #ff8bb4;
+  color: #7a0030;
+}
+
 /* ── Empty state ── */
 
 .empty-state {
