@@ -24,8 +24,6 @@ function createWindow(): void {
         { type: 'separator' },
         { label: 'Save', accelerator: 'CmdOrCtrl+S', click: () => win?.webContents.send('menu:save') },
         { label: 'Save As...', accelerator: 'CmdOrCtrl+Shift+S', click: () => win?.webContents.send('menu:saveAs') },
-        { type: 'separator' },
-        { label: 'Export HTML...', accelerator: 'CmdOrCtrl+E', click: () => win?.webContents.send('menu:exportHtml') },
       ],
     },
   ])

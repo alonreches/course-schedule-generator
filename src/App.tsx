@@ -5,8 +5,6 @@ import CourseWizard from './CourseWizard'
 import ScheduleView from './ScheduleView'
 import StatsTab from './StatsTab'
 import { scheduleGenerator } from './scheduleGenerator'
-import { generateHtml, findBlankCells } from './htmlExport'
-import type { BlankCellWarning } from './htmlExport'
 import type { CircuitDay, CourseConfig, CourseSchedule, NamedTemplate, SlotAssignment, Student } from './types'
 
 function weekdaysInRange(startDate: string, endDate: string): string[] {
@@ -42,7 +40,6 @@ export default function App() {
   const [simulators, setSimulators] = useState<string[]>([])
   const [projectPath, setProjectPath] = useState<string | null>(null)
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
-  const [exportWarnings, setExportWarnings] = useState<BlankCellWarning[] | null>(null)
 
   const isDirty = schedule !== null && snapshot(schedule, courseConfig) !== savedSnapshot
 
@@ -102,24 +99,6 @@ export default function App() {
     }
   }
 
-  async function doExportHtml() {
-    const schedule = scheduleRef.current
-    if (!schedule) return
-    const html = generateHtml(schedule, scheduleStudents)
-    await window.api.exportHtml(html)
-  }
-
-  async function handleExportHtml() {
-    const schedule = scheduleRef.current
-    if (!schedule) return
-    const warnings = findBlankCells(schedule)
-    if (warnings.length > 0) {
-      setExportWarnings(warnings)
-    } else {
-      await doExportHtml()
-    }
-  }
-
   async function handleOpen() {
     const canProceed = await checkUnsaved()
     if (!canProceed) return
@@ -158,13 +137,11 @@ export default function App() {
     const unsubOpen = window.api.onMenuOpen(handleOpen)
     const unsubSave = window.api.onMenuSave(handleSave)
     const unsubSaveAs = window.api.onMenuSaveAs(handleSaveAs)
-    const unsubExportHtml = window.api.onMenuExportHtml(handleExportHtml)
     return () => {
       unsubNew()
       unsubOpen()
       unsubSave()
       unsubSaveAs()
-      unsubExportHtml()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -311,23 +288,11 @@ export default function App() {
         <button className="tab tab-new-course" onClick={handleNewCourse}>
           + New Course
         </button>
+        <span className="tab-bar-spacer" />
+        <button className="ribbon-btn" onClick={handleOpen}>Open</button>
+        <button className="ribbon-btn" onClick={handleSave} disabled={!schedule}>Save</button>
+        <button className="ribbon-btn" onClick={handleSaveAs} disabled={!schedule}>Export</button>
       </div>
-      {exportWarnings && (
-        <div className="export-warning-banner">
-          <div className="export-warning-body">
-            <strong>Incomplete cells:</strong>{' '}
-            {exportWarnings.map((warning, i) => (
-              <span key={i} className="export-warning-item">
-                {warning.date} Circuit {warning.circuitLabel} (missing {warning.missing.join(', ')})
-              </span>
-            ))}
-          </div>
-          <div className="export-warning-actions">
-            <button className="btn btn-ghost" onClick={() => setExportWarnings(null)}>Dismiss</button>
-            <button className="btn" onClick={async () => { setExportWarnings(null); await doExportHtml() }}>Export anyway</button>
-          </div>
-        </div>
-      )}
       <main className="content">
         {content === 'templates' && <TemplatesScreen />}
         {content === 'schedule' && schedule && (

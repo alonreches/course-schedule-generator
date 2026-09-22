@@ -64,18 +64,6 @@ export function registerIpcHandlers(userDataDir: string): void {
     return { filePath: result.filePaths[0], data }
   })
 
-  ipcMain.handle('project:exportHtml', async (_e, html: string) => {
-    const win = BrowserWindow.getFocusedWindow()
-    if (!win) return null
-    const result = await dialog.showSaveDialog(win, {
-      filters: [{ name: 'HTML File', extensions: ['html'] }],
-      defaultPath: 'schedule.html',
-    })
-    if (result.canceled || !result.filePath) return null
-    fs.writeFileSync(result.filePath, html, 'utf-8')
-    return { filePath: result.filePath }
-  })
-
   ipcMain.handle('template:export', async (_e, id: string) => {
     const exported = store.exportTemplate(id)
     if (!exported) return null

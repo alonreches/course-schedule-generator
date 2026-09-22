@@ -31,8 +31,6 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('project:open'),
   confirmUnsaved: (): Promise<number> =>
     ipcRenderer.invoke('dialog:confirmUnsaved'),
-  exportHtml: (html: string): Promise<{ filePath: string } | null> =>
-    ipcRenderer.invoke('project:exportHtml', html),
 
   onMenuNew: (cb: () => void): (() => void) => {
     const handler = (_e: IpcRendererEvent) => cb()
@@ -53,10 +51,5 @@ contextBridge.exposeInMainWorld('api', {
     const handler = (_e: IpcRendererEvent) => cb()
     ipcRenderer.on('menu:saveAs', handler)
     return () => ipcRenderer.removeListener('menu:saveAs', handler)
-  },
-  onMenuExportHtml: (cb: () => void): (() => void) => {
-    const handler = (_e: IpcRendererEvent) => cb()
-    ipcRenderer.on('menu:exportHtml', handler)
-    return () => ipcRenderer.removeListener('menu:exportHtml', handler)
   },
 })
