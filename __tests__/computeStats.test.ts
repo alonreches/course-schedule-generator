@@ -3,6 +3,7 @@ import {
   computeSlotPositionStats,
   computeShiftStats,
   computeInstructorStats,
+  computeRunsPerStudentPerInstructor,
 } from '../src/computeStats'
 import type { CourseSchedule } from '../src/types'
 
@@ -134,6 +135,42 @@ describe('computeSlotPositionStats', () => {
   it('returns maxPosition 0 for empty schedule', () => {
     const { maxPosition } = computeSlotPositionStats({ weeks: [] })
     expect(maxPosition).toBe(0)
+  })
+
+  it('never produces position keys above 4 for a typical 4-slot circuit', () => {
+    const schedule: CourseSchedule = {
+      weeks: [
+        {
+          weekNumber: 1,
+          days: [
+            {
+              date: '2024-01-08',
+              type: 'run',
+              circuits: [
+                {
+                  circuitId: 'circuit-0',
+                  circuitLabel: 'A',
+                  type: 'run',
+                  slots: [
+                    { studentId: 's0', itemName: 'Item1', itemType: 'run' },
+                    { studentId: 's1', itemName: 'Item2', itemType: 'run' },
+                    { studentId: 's2', itemName: 'Item3', itemType: 'run' },
+                    { studentId: 's3', itemName: 'Item4', itemType: 'run' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const { byStudent, maxPosition } = computeSlotPositionStats(schedule)
+    expect(maxPosition).toBe(4)
+    for (const posMap of byStudent.values()) {
+      for (const pos of posMap.keys()) {
+        expect(pos).toBeLessThanOrEqual(4)
+      }
+    }
   })
 })
 
@@ -305,5 +342,161 @@ describe('computeInstructorStats', () => {
     }
     const { unassigned } = computeInstructorStats(schedule)
     expect(unassigned).toBe(1)
+  })
+})
+
+// ── computeRunsPerStudentPerInstructor ────────────────────────────────────────
+
+describe('computeRunsPerStudentPerInstructor', () => {
+  it('counts run-type slots by student and instructor', () => {
+    const schedule: CourseSchedule = {
+      weeks: [
+        {
+          weekNumber: 1,
+          days: [
+            {
+              date: '2024-01-08',
+              type: 'run',
+              circuits: [
+                {
+                  circuitId: 'circuit-0',
+                  circuitLabel: 'A',
+                  type: 'run',
+                  instructor: 'Alice',
+                  slots: [
+                    { studentId: 's0', itemName: 'Item1', itemType: 'run' },
+                    { studentId: 's1', itemName: 'Item2', itemType: 'run' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const { byStudentByInstructor } = computeRunsPerStudentPerInstructor(schedule)
+
+    expect(byStudentByInstructor.get('s0')?.get('Alice')).toBe(1)
+    expect(byStudentByInstructor.get('s1')?.get('Alice')).toBe(1)
+  })
+
+  it('excludes assessment-type slots', () => {
+    const schedule: CourseSchedule = {
+      weeks: [
+        {
+          weekNumber: 1,
+          days: [
+            {
+              date: '2024-01-08',
+              type: 'run',
+              circuits: [
+                {
+                  circuitId: 'circuit-0',
+                  circuitLabel: 'A',
+                  type: 'run',
+                  instructor: 'Alice',
+                  slots: [
+                    { studentId: 's0', itemName: 'Assessment', itemType: 'assessment' },
+                    { studentId: 's1', itemName: 'Item1', itemType: 'run' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const { byStudentByInstructor } = computeRunsPerStudentPerInstructor(schedule)
+
+    expect(byStudentByInstructor.has('s0')).toBe(false)
+    expect(byStudentByInstructor.get('s1')?.get('Alice')).toBe(1)
+  })
+
+  it('accumulates counts across multiple circuit-days and instructors', () => {
+    const schedule: CourseSchedule = {
+      weeks: [
+        {
+          weekNumber: 1,
+          days: [
+            {
+              date: '2024-01-08',
+              type: 'run',
+              circuits: [
+                {
+                  circuitId: 'circuit-0',
+                  circuitLabel: 'A',
+                  type: 'run',
+                  instructor: 'Alice',
+                  slots: [
+                    { studentId: 's0', itemName: 'Item1', itemType: 'run' },
+                  ],
+                },
+                {
+                  circuitId: 'circuit-1',
+                  circuitLabel: 'B',
+                  type: 'run',
+                  instructor: 'Bob',
+                  slots: [
+                    { studentId: 's0', itemName: 'Item2', itemType: 'run' },
+                  ],
+                },
+              ],
+            },
+            {
+              date: '2024-01-09',
+              type: 'run',
+              circuits: [
+                {
+                  circuitId: 'circuit-0',
+                  circuitLabel: 'A',
+                  type: 'run',
+                  instructor: 'Alice',
+                  slots: [
+                    { studentId: 's0', itemName: 'Item3', itemType: 'run' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const { byStudentByInstructor } = computeRunsPerStudentPerInstructor(schedule)
+
+    expect(byStudentByInstructor.get('s0')?.get('Alice')).toBe(2)
+    expect(byStudentByInstructor.get('s0')?.get('Bob')).toBe(1)
+  })
+
+  it('skips slots on circuit-days with no instructor', () => {
+    const schedule: CourseSchedule = {
+      weeks: [
+        {
+          weekNumber: 1,
+          days: [
+            {
+              date: '2024-01-08',
+              type: 'run',
+              circuits: [
+                {
+                  circuitId: 'circuit-0',
+                  circuitLabel: 'A',
+                  type: 'run',
+                  slots: [
+                    { studentId: 's0', itemName: 'Item1', itemType: 'run' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const { byStudentByInstructor } = computeRunsPerStudentPerInstructor(schedule)
+    expect(byStudentByInstructor.size).toBe(0)
+  })
+
+  it('returns empty map for empty schedule', () => {
+    const { byStudentByInstructor } = computeRunsPerStudentPerInstructor({ weeks: [] })
+    expect(byStudentByInstructor.size).toBe(0)
   })
 })

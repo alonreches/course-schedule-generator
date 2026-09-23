@@ -79,3 +79,31 @@ export function computeInstructorStats(schedule: CourseSchedule): InstructorStat
 
   return { byInstructor, unassigned }
 }
+
+export interface RunsPerStudentPerInstructorStats {
+  /** studentId → (instructor name → run count) */
+  byStudentByInstructor: Map<string, Map<string, number>>
+}
+
+export function computeRunsPerStudentPerInstructor(schedule: CourseSchedule): RunsPerStudentPerInstructorStats {
+  const byStudentByInstructor = new Map<string, Map<string, number>>()
+
+  for (const week of schedule.weeks) {
+    for (const day of week.days) {
+      for (const circuit of day.circuits) {
+        const instructor = circuit.instructor?.trim()
+        if (!instructor) continue
+        for (const slot of circuit.slots) {
+          if (slot.itemType !== 'run') continue
+          if (!byStudentByInstructor.has(slot.studentId)) {
+            byStudentByInstructor.set(slot.studentId, new Map())
+          }
+          const instructorMap = byStudentByInstructor.get(slot.studentId)!
+          instructorMap.set(instructor, (instructorMap.get(instructor) ?? 0) + 1)
+        }
+      }
+    }
+  }
+
+  return { byStudentByInstructor }
+}

@@ -1,5 +1,5 @@
 import type { CourseSchedule, Student } from './types'
-import { computeSlotPositionStats, computeShiftStats, computeInstructorStats } from './computeStats'
+import { computeSlotPositionStats, computeShiftStats, computeInstructorStats, computeRunsPerStudentPerInstructor } from './computeStats'
 
 interface Props {
   schedule: CourseSchedule
@@ -11,8 +11,9 @@ export default function StatsTab({ schedule, students, instructors }: Props) {
   const { byStudent: slotPos } = computeSlotPositionStats(schedule)
   const { byStudent: shifts } = computeShiftStats(schedule)
   const { byInstructor, unassigned } = computeInstructorStats(schedule)
+  const { byStudentByInstructor } = computeRunsPerStudentPerInstructor(schedule)
 
-  const positions = [1, 2, 3, 4, 5, 6]
+  const positions = [1, 2, 3, 4]
 
   return (
     <div className="stats-tab">
@@ -87,6 +88,35 @@ export default function StatsTab({ schedule, students, instructors }: Props) {
                 <td className="stats-td stats-td-num">{byInstructor.get(instructor) ?? 0}</td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="stats-section">
+        <h3 className="stats-heading">Runs per Student per Instructor</h3>
+        <table className="stats-table">
+          <thead>
+            <tr>
+              <th className="stats-th stats-th-label">Student</th>
+              {instructors.map(instructor => (
+                <th key={instructor} className="stats-th">{instructor}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {students.map(student => {
+              const instructorMap = byStudentByInstructor.get(student.id)
+              return (
+                <tr key={student.id}>
+                  <td className="stats-td stats-td-label">{student.name}</td>
+                  {instructors.map(instructor => (
+                    <td key={instructor} className="stats-td stats-td-num">
+                      {instructorMap?.get(instructor) ?? 0}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </section>
