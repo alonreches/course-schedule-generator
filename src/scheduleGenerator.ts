@@ -102,6 +102,7 @@ function allocateItemsToWeeks(
 }
 
 const SPARE_ITEM: { name: string; type: ActivityType } = { name: 'Spare Run', type: 'run' };
+const SLOTS_PER_CIRCUIT_DAY = 6;
 
 // Round-robin using a global (non-resetting) day counter and stable student sort ensures
 // position-count fairness (≤1 difference) both within a week and across the full course.
@@ -114,7 +115,7 @@ function buildCircuitDay(
   const sorted = [...circuit.students].sort((a, b) => a.id.localeCompare(b.id));
   const size = sorted.length;
   const offset = globalDayIndex % size;
-  return sorted.map((_, i) => {
+  const slots: SlotAssignment[] = sorted.map((_, i) => {
     const student = sorted[(offset + i) % size];
     return {
       studentId: student.id,
@@ -122,6 +123,10 @@ function buildCircuitDay(
       itemType: resolved.type,
     };
   });
+  while (slots.length < SLOTS_PER_CIRCUIT_DAY) {
+    slots.push({ studentId: '', itemName: SPARE_ITEM.name, itemType: SPARE_ITEM.type });
+  }
+  return slots;
 }
 
 export function scheduleGenerator(inputs: ScheduleInputs): CourseSchedule {

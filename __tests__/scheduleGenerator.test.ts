@@ -94,7 +94,10 @@ describe('slot-position fairness', () => {
       for (const day of week.days) {
         for (const circuit of day.circuits) {
           circuit.slots.forEach((slot, pos) => {
-            posCount[slot.studentId][pos]++;
+            // Skip padding Spare Run slots (studentId='') and out-of-range positions
+            if (posCount[slot.studentId] && pos < circuitSize) {
+              posCount[slot.studentId][pos]++;
+            }
           });
         }
       }
@@ -277,7 +280,7 @@ describe('circuit sizing', () => {
   });
 
   for (const n of [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]) {
-    it(`n=${n} students → all circuits have 3–5 members`, () => {
+    it(`n=${n} students → all circuits have exactly 6 slots, 3–5 of which are student slots`, () => {
       const schedule = scheduleGenerator({
         template: { items },
         students: makeStudents(n),
@@ -286,11 +289,16 @@ describe('circuit sizing', () => {
       });
       const day = schedule.weeks[0].days[0];
       for (const circuit of day.circuits) {
-        expect(circuit.slots.length).toBeGreaterThanOrEqual(3);
-        expect(circuit.slots.length).toBeLessThanOrEqual(5);
+        expect(circuit.slots.length).toBe(6);
+        const studentSlots = circuit.slots.filter(s => s.studentId !== '');
+        expect(studentSlots.length).toBeGreaterThanOrEqual(3);
+        expect(studentSlots.length).toBeLessThanOrEqual(5);
       }
-      // All students assigned
-      const total = day.circuits.reduce((s, c) => s + c.slots.length, 0);
+      // All students assigned (non-padding slots)
+      const total = day.circuits.reduce(
+        (acc, c) => acc + c.slots.filter(sl => sl.studentId !== '').length,
+        0,
+      );
       expect(total).toBe(n);
     });
   }
@@ -316,7 +324,9 @@ describe('day-type consistency', () => {
     for (const week of schedule.weeks) {
       for (const day of week.days) {
         for (const circuit of day.circuits) {
-          const types = circuit.slots.map(s => s.itemType);
+          // Padding slots (studentId='') are always Spare Run/run — only check real student slots
+          const realSlots = circuit.slots.filter(s => s.studentId !== '');
+          const types = realSlots.map(s => s.itemType);
           expect(new Set(types).size).toBe(1); // all same type
           expect(types[0]).toBe(circuit.type); // matches CircuitDay.type
         }
@@ -344,6 +354,46 @@ describe('day-type consistency', () => {
     const days = schedule.weeks[0].days;
     expect(days[0].type).toBe('run');
     expect(days[1].type).toBe('assessment');
+  });
+});
+
+// ── Test: 6-slot backfill ─────────────────────────────────────────────────────
+
+describe('6-slot backfill', () => {
+  it('every circuit-day has exactly 6 slots regardless of template size', () => {
+    for (const templateSize of [0, 1, 3, 6, 10]) {
+      const students = makeStudents(8); // 2 circuits of 4 → 4 student slots each, needs 2 Spare pads
+      const schedule = scheduleGenerator({
+        template: { items: makeItems(templateSize) },
+        students,
+        courseDates: WEEK1.slice(0, 3),
+        daysOff: [],
+      });
+      for (const week of schedule.weeks) {
+        for (const day of week.days) {
+          for (const circuit of day.circuits) {
+            expect(circuit.slots.length).toBe(6);
+          }
+        }
+      }
+    }
+  });
+
+  it('padding slots use Spare Run item name and run type', () => {
+    const students = makeStudents(3); // 1 circuit of 3 → needs 3 padding slots
+    const schedule = scheduleGenerator({
+      template: { items: makeItems(1) },
+      students,
+      courseDates: WEEK1.slice(0, 1),
+      daysOff: [],
+    });
+    const circuit = schedule.weeks[0].days[0].circuits[0];
+    const paddingSlots = circuit.slots.filter(s => s.studentId === '');
+    expect(paddingSlots.length).toBe(3);
+    for (const slot of paddingSlots) {
+      expect(slot.itemName).toBe('Spare Run');
+      expect(slot.itemType).toBe('run');
+    }
   });
 });
 
