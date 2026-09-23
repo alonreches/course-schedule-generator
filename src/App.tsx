@@ -4,6 +4,7 @@ import TemplatesScreen from './TemplatesScreen'
 import CourseWizard from './CourseWizard'
 import ScheduleView from './ScheduleView'
 import StatsTab from './StatsTab'
+import NamesTab from './NamesTab'
 import { scheduleGenerator } from './scheduleGenerator'
 import type { CircuitDay, CourseConfig, CourseSchedule, NamedTemplate, SlotAssignment, Student } from './types'
 
@@ -25,7 +26,7 @@ function snapshot(schedule: CourseSchedule | null, courseConfig: CourseConfig | 
   return JSON.stringify({ schedule, courseConfig })
 }
 
-type AppContent = 'templates' | 'schedule' | 'stats' | null
+type AppContent = 'templates' | 'schedule' | 'stats' | 'names' | null
 
 export default function App() {
   const [content, setContent] = useState<AppContent>(null)
@@ -249,6 +250,14 @@ export default function App() {
     setContent('stats')
   }
 
+  function handleRename(studentId: string, newName: string) {
+    setScheduleStudents(prev => prev.map(s => s.id === studentId ? { ...s, name: newName } : s))
+    setCourseConfig(prev => prev ? {
+      ...prev,
+      students: prev.students.map(s => s.id === studentId ? { ...s, name: newName } : s),
+    } : prev)
+  }
+
   return (
     <div className="app">
       <div role="tablist" className="tab-bar" aria-label="Navigation tabs">
@@ -277,6 +286,16 @@ export default function App() {
             <span className="tab-bar-empty">No courses open</span>
           )
         )}
+        {schedule && (
+          <button
+            role="tab"
+            className={`tab${content === 'names' ? ' tab-active' : ''}`}
+            aria-selected={content === 'names'}
+            onClick={() => setContent('names')}
+          >
+            Names
+          </button>
+        )}
         <button
           role="tab"
           className={`tab${content === 'stats' ? ' tab-active' : ''}`}
@@ -304,6 +323,9 @@ export default function App() {
             onSlotChange={(di, ci, si, patch) => handleSlotChange(activeWeekIndex, di, ci, si, patch)}
             onCircuitDayChange={(di, ci, patch) => handleCircuitDayChange(activeWeekIndex, di, ci, patch)}
           />
+        )}
+        {content === 'names' && schedule && (
+          <NamesTab students={scheduleStudents} onRename={handleRename} />
         )}
         {content === 'stats' && (
           schedule

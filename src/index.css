@@ -850,3 +850,43 @@ body {
   background: #f8f8f8;
 }
 
+
+.names-tab {
+  padding: 24px;
+  max-width: 480px;
+}
+
+.names-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.names-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.names-list-number {
+  min-width: 24px;
+  text-align: right;
+  color: #666666;
+  font-size: 13px;
+  user-select: none;
+}
+
+.names-list-input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.names-list-input:focus {
+  outline: none;
+  border-color: #0070cc;
+}
