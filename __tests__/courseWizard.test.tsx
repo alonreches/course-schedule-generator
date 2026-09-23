@@ -65,7 +65,7 @@ describe('CourseWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(screen.getByLabelText(/course name/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/student count/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/student names/i)).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: /student name 1/i })).toBeInTheDocument()
   })
 
   it('Next is disabled on step 2 when student count is 0', () => {
@@ -82,6 +82,27 @@ describe('CourseWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     fireEvent.click(screen.getByRole('button', { name: /back/i }))
     expect(screen.getByText(/pick a template/i)).toBeInTheDocument()
+  })
+
+  it('shows line numbers next to student name inputs', () => {
+    renderWizard()
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 't1' } })
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    fireEvent.change(screen.getByLabelText(/student count/i), { target: { value: '3' } })
+    expect(screen.getByText('1')).toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+  })
+
+  it('line numbers update when student count changes', () => {
+    renderWizard()
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 't1' } })
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    fireEvent.change(screen.getByLabelText(/student count/i), { target: { value: '4' } })
+    expect(screen.getByText('4')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText(/student count/i), { target: { value: '2' } })
+    expect(screen.queryByText('3')).not.toBeInTheDocument()
+    expect(screen.queryByText('4')).not.toBeInTheDocument()
   })
 
   // ── Step 3 ──
@@ -178,7 +199,8 @@ describe('CourseWizard', () => {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 't1' } })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     fireEvent.change(screen.getByLabelText(/student count/i), { target: { value: '2' } })
-    fireEvent.change(screen.getByLabelText(/student names/i), { target: { value: 'Alice\nBob' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /student name 1/i }), { target: { value: 'Alice' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /student name 2/i }), { target: { value: 'Bob' } })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     fireEvent.change(screen.getByLabelText(/start date/i), { target: { value: '2025-01-06' } })
     fireEvent.change(screen.getByLabelText(/end date/i), { target: { value: '2025-01-31' } })
@@ -194,7 +216,7 @@ describe('CourseWizard', () => {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 't1' } })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     fireEvent.change(screen.getByLabelText(/student count/i), { target: { value: '3' } })
-    fireEvent.change(screen.getByLabelText(/student names/i), { target: { value: 'Alice' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /student name 1/i }), { target: { value: 'Alice' } })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     fireEvent.change(screen.getByLabelText(/start date/i), { target: { value: '2025-01-06' } })
     fireEvent.change(screen.getByLabelText(/end date/i), { target: { value: '2025-01-31' } })

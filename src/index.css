@@ -731,6 +731,31 @@ body {
   width: 100%;
 }
 
+.wizard-name-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wizard-name-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.wizard-name-number {
+  color: #aaaaaa;
+  flex-shrink: 0;
+  font-size: 12px;
+  min-width: 18px;
+  text-align: right;
+  user-select: none;
+}
+
+.wizard-name-row .wizard-input {
+  flex: 1;
+}
+
 .wizard-hint {
   color: #999999;
   font-size: 12px;

@@ -14,7 +14,7 @@ export default function CourseWizard({ templates, onComplete, onCancel }: Props)
   const [templateId, setTemplateId] = useState('')
   const [courseName, setCourseName] = useState('')
   const [studentCount, setStudentCount] = useState(1)
-  const [studentNamesText, setStudentNamesText] = useState('')
+  const [studentNames, setStudentNames] = useState<string[]>([''])
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [extraDaysOff, setExtraDaysOff] = useState<string[]>([])
@@ -27,11 +27,18 @@ export default function CourseWizard({ templates, onComplete, onCancel }: Props)
   const step3Valid = startDate !== '' && endDate !== '' && endDate > startDate
 
   function buildStudents(): Student[] {
-    const lines = studentNamesText.split('\n').map(l => l.trim()).filter(Boolean)
     return Array.from({ length: studentCount }, (_, i) => ({
       id: `student-${i + 1}`,
-      name: lines[i] ?? `S${i + 1}`,
+      name: studentNames[i]?.trim() || `S${i + 1}`,
     }))
+  }
+
+  function handleStudentCountChange(count: number) {
+    setStudentCount(count)
+    setStudentNames(prev => {
+      if (count > prev.length) return [...prev, ...Array(count - prev.length).fill('')]
+      return prev.slice(0, count)
+    })
   }
 
   function handleFinish() {
@@ -86,9 +93,9 @@ export default function CourseWizard({ templates, onComplete, onCancel }: Props)
               courseName={courseName}
               onCourseNameChange={setCourseName}
               studentCount={studentCount}
-              onStudentCountChange={setStudentCount}
-              studentNamesText={studentNamesText}
-              onStudentNamesTextChange={setStudentNamesText}
+              onStudentCountChange={handleStudentCountChange}
+              studentNames={studentNames}
+              onStudentNamesChange={setStudentNames}
             />
           )}
           {step === 3 && (
@@ -172,14 +179,14 @@ interface Step2Props {
   onCourseNameChange: (value: string) => void
   studentCount: number
   onStudentCountChange: (count: number) => void
-  studentNamesText: string
-  onStudentNamesTextChange: (value: string) => void
+  studentNames: string[]
+  onStudentNamesChange: (names: string[]) => void
 }
 
 function WizardStep2({
   courseName, onCourseNameChange,
   studentCount, onStudentCountChange,
-  studentNamesText, onStudentNamesTextChange,
+  studentNames, onStudentNamesChange,
 }: Step2Props) {
   return (
     <div className="wizard-step">
@@ -206,17 +213,27 @@ function WizardStep2({
         />
       </div>
       <div className="wizard-field">
-        <label htmlFor="wizard-student-names" className="wizard-label">
-          Student names <span className="wizard-optional">(optional — one per line)</span>
-        </label>
-        <textarea
-          id="wizard-student-names"
-          className="input-sm wizard-textarea"
-          value={studentNamesText}
-          onChange={e => onStudentNamesTextChange(e.target.value)}
-          placeholder={'Alice\nBob\nCharlie'}
-          rows={5}
-        />
+        <span className="wizard-label">
+          Student names <span className="wizard-optional">(optional)</span>
+        </span>
+        <div className="wizard-name-list">
+          {Array.from({ length: studentCount }, (_, i) => (
+            <div key={i} className="wizard-name-row">
+              <span className="wizard-name-number">{i + 1}</span>
+              <input
+                className="input-sm wizard-input"
+                aria-label={`Student name ${i + 1}`}
+                value={studentNames[i] ?? ''}
+                onChange={e => {
+                  const next = [...studentNames]
+                  next[i] = e.target.value
+                  onStudentNamesChange(next)
+                }}
+                placeholder={`S${i + 1}`}
+              />
+            </div>
+          ))}
+        </div>
         <p className="wizard-hint">Leave blank to auto-label students S1, S2, S3…</p>
       </div>
     </div>
