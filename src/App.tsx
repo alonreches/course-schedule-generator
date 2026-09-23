@@ -6,6 +6,7 @@ import ScheduleView from './ScheduleView'
 import StatsTab from './StatsTab'
 import NamesTab from './NamesTab'
 import { scheduleGenerator } from './scheduleGenerator'
+import { weekTabLabel } from './weekTabLabel'
 import type { CircuitDay, CourseConfig, CourseSchedule, NamedTemplate, SlotAssignment, Student } from './types'
 
 function weekdaysInRange(startDate: string, endDate: string): string[] {
@@ -278,7 +279,7 @@ export default function App() {
               aria-selected={content === 'schedule' && activeWeekIndex === i}
               onClick={() => handleWeekTabClick(i)}
             >
-              Week {w.weekNumber}
+              {weekTabLabel(w)}
             </button>
           ))
         ) : (
