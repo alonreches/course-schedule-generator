@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import CourseWizard from '../src/CourseWizard'
 import type { NamedTemplate } from '../src/types'
 
@@ -89,9 +89,10 @@ describe('CourseWizard', () => {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 't1' } })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     fireEvent.change(screen.getByLabelText(/student count/i), { target: { value: '3' } })
-    expect(screen.getByText('1')).toBeInTheDocument()
-    expect(screen.getByText('2')).toBeInTheDocument()
-    expect(screen.getByText('3')).toBeInTheDocument()
+    const nameList = document.querySelector('.wizard-name-list')!
+    expect(within(nameList as HTMLElement).getByText('1')).toBeInTheDocument()
+    expect(within(nameList as HTMLElement).getByText('2')).toBeInTheDocument()
+    expect(within(nameList as HTMLElement).getByText('3')).toBeInTheDocument()
   })
 
   it('line numbers update when student count changes', () => {
@@ -99,10 +100,11 @@ describe('CourseWizard', () => {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 't1' } })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     fireEvent.change(screen.getByLabelText(/student count/i), { target: { value: '4' } })
-    expect(screen.getByText('4')).toBeInTheDocument()
+    const nameList = () => document.querySelector('.wizard-name-list')!
+    expect(within(nameList() as HTMLElement).getByText('4')).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/student count/i), { target: { value: '2' } })
-    expect(screen.queryByText('3')).not.toBeInTheDocument()
-    expect(screen.queryByText('4')).not.toBeInTheDocument()
+    expect(within(nameList() as HTMLElement).queryByText('3')).not.toBeInTheDocument()
+    expect(within(nameList() as HTMLElement).queryByText('4')).not.toBeInTheDocument()
   })
 
   // ── Step 3 ──
