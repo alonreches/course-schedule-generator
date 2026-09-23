@@ -42,6 +42,8 @@ export default function App() {
   const [simulators, setSimulators] = useState<string[]>([])
   const [projectPath, setProjectPath] = useState<string | null>(null)
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
+  const [past, setPast] = useState<CourseSchedule[]>([])
+  const [future, setFuture] = useState<CourseSchedule[]>([])
 
   const isDirty = schedule !== null && snapshot(schedule, courseConfig) !== savedSnapshot
 
@@ -116,6 +118,7 @@ export default function App() {
     setSavedSnapshot(snapshot(sched, config))
     setActiveWeekIndex(0)
     setContent('schedule')
+    clearHistory()
     const appData = await window.api.getAll()
     setInstructors(appData.instructors)
     setSimulators(appData.simulators)
@@ -131,6 +134,7 @@ export default function App() {
     setSavedSnapshot(null)
     setContent(null)
     setActiveWeekIndex(0)
+    clearHistory()
     await openWizard()
   }
 
@@ -166,6 +170,7 @@ export default function App() {
     setSavedSnapshot(null)
     setContent(null)
     setActiveWeekIndex(0)
+    clearHistory()
     await openWizard()
   }
 
@@ -184,72 +189,100 @@ export default function App() {
     setActiveWeekIndex(0)
     setContent('schedule')
     setShowWizard(false)
+    clearHistory()
   }
 
   function handleWizardCancel() {
     setShowWizard(false)
   }
 
+  function clearHistory() {
+    setPast([])
+    setFuture([])
+  }
+
+  function pushSchedule(next: CourseSchedule) {
+    const current = scheduleRef.current
+    if (current) setPast(p => [...p, current])
+    setFuture([])
+    setSchedule(next)
+  }
+
+  function handleUndo() {
+    if (past.length === 0) return
+    const prev = past[past.length - 1]
+    const current = scheduleRef.current
+    setPast(p => p.slice(0, -1))
+    if (current) setFuture(f => [...f, current])
+    setSchedule(prev)
+  }
+
+  function handleRedo() {
+    if (future.length === 0) return
+    const next = future[future.length - 1]
+    const current = scheduleRef.current
+    setFuture(f => f.slice(0, -1))
+    if (current) setPast(p => [...p, current])
+    setSchedule(next)
+  }
+
   function handleSlotChange(weekIndex: number, dayIndex: number, circuitIndex: number, slotIndex: number, patch: Partial<SlotAssignment>) {
-    setSchedule(prev => {
-      if (!prev) return prev
-      return {
-        weeks: prev.weeks.map((w, wi) =>
-          wi !== weekIndex ? w : {
-            ...w,
-            days: w.days.map((d, di) =>
-              di !== dayIndex ? d : {
-                ...d,
-                circuits: d.circuits.map((c, ci) =>
-                  ci !== circuitIndex ? c : {
-                    ...c,
-                    slots: c.slots.map((s, si) =>
-                      si !== slotIndex ? s : { ...s, ...patch }
-                    ),
-                  }
-                ),
-              }
-            ),
-          }
-        ),
-      }
+    const prev = scheduleRef.current
+    if (!prev) return
+    pushSchedule({
+      weeks: prev.weeks.map((w, wi) =>
+        wi !== weekIndex ? w : {
+          ...w,
+          days: w.days.map((d, di) =>
+            di !== dayIndex ? d : {
+              ...d,
+              circuits: d.circuits.map((c, ci) =>
+                ci !== circuitIndex ? c : {
+                  ...c,
+                  slots: c.slots.map((s, si) =>
+                    si !== slotIndex ? s : { ...s, ...patch }
+                  ),
+                }
+              ),
+            }
+          ),
+        }
+      ),
     })
   }
 
   function handleCircuitDayChange(weekIndex: number, dayIndex: number, circuitIndex: number, patch: Partial<CircuitDay>) {
-    setSchedule(prev => {
-      if (!prev) return prev
-      return {
-        weeks: prev.weeks.map((w, wi) =>
-          wi !== weekIndex ? w : {
-            ...w,
-            days: w.days.map((d, di) =>
-              di !== dayIndex ? d : {
-                ...d,
-                circuits: d.circuits.map((c, ci) =>
-                  ci !== circuitIndex ? c : { ...c, ...patch }
-                ),
-              }
-            ),
-          }
-        ),
-      }
+    const prev = scheduleRef.current
+    if (!prev) return
+    pushSchedule({
+      weeks: prev.weeks.map((w, wi) =>
+        wi !== weekIndex ? w : {
+          ...w,
+          days: w.days.map((d, di) =>
+            di !== dayIndex ? d : {
+              ...d,
+              circuits: d.circuits.map((c, ci) =>
+                ci !== circuitIndex ? c : { ...c, ...patch }
+              ),
+            }
+          ),
+        }
+      ),
     })
   }
 
   function handleCourseDayChange(weekIndex: number, dayIndex: number, patch: Partial<CourseDay>) {
-    setSchedule(prev => {
-      if (!prev) return prev
-      return {
-        weeks: prev.weeks.map((w, wi) =>
-          wi !== weekIndex ? w : {
-            ...w,
-            days: w.days.map((d, di) =>
-              di !== dayIndex ? d : { ...d, ...patch }
-            ),
-          }
-        ),
-      }
+    const prev = scheduleRef.current
+    if (!prev) return
+    pushSchedule({
+      weeks: prev.weeks.map((w, wi) =>
+        wi !== weekIndex ? w : {
+          ...w,
+          days: w.days.map((d, di) =>
+            di !== dayIndex ? d : { ...d, ...patch }
+          ),
+        }
+      ),
     })
   }
 
@@ -325,6 +358,8 @@ export default function App() {
           + New Course
         </button>
         <span className="tab-bar-spacer" />
+        <button className="ribbon-btn" onClick={handleUndo} disabled={past.length === 0} aria-label="Undo">Undo</button>
+        <button className="ribbon-btn" onClick={handleRedo} disabled={future.length === 0} aria-label="Redo">Redo</button>
         <button className="ribbon-btn" onClick={handleOpen}>Open</button>
         <button className="ribbon-btn" onClick={handleSave} disabled={!schedule}>Save</button>
         <button className="ribbon-btn" onClick={handleSaveAs} disabled={!schedule}>Export</button>
