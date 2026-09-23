@@ -1,17 +1,18 @@
 import { Fragment } from 'react'
-import type { CircuitDay, CourseDay, CourseWeek, SlotAssignment, Student } from './types'
+import type { CircuitDay, CourseDay, CourseWeek, SlotAssignment, Student, TemplateItem } from './types'
 
 interface Props {
   week: CourseWeek
   students: Student[]
   instructors: string[]
   simulators: string[]
+  templateItems: TemplateItem[]
   onSlotChange: (dayIndex: number, circuitIndex: number, slotIndex: number, patch: Partial<SlotAssignment>) => void
   onCircuitDayChange: (dayIndex: number, circuitIndex: number, patch: Partial<CircuitDay>) => void
   onCourseDayChange: (dayIndex: number, patch: Partial<CourseDay>) => void
 }
 
-export default function ScheduleView({ week, students, instructors, simulators, onSlotChange, onCircuitDayChange, onCourseDayChange }: Props) {
+export default function ScheduleView({ week, students, instructors, simulators, templateItems, onSlotChange, onCircuitDayChange, onCourseDayChange }: Props) {
   const studentMap = new Map(students.map(s => [s.id, s.name]))
   const nameToStudent = new Map(students.map(s => [s.name, s]))
 
@@ -31,6 +32,9 @@ export default function ScheduleView({ week, students, instructors, simulators, 
       </datalist>
       <datalist id="schedule-simulators-list">
         {simulators.map(sim => <option key={sim} value={sim} />)}
+      </datalist>
+      <datalist id="schedule-template-items-list">
+        {templateItems.map(item => <option key={item.name} value={item.name} />)}
       </datalist>
 
       <div
@@ -65,6 +69,7 @@ export default function ScheduleView({ week, students, instructors, simulators, 
                 circuitDay={cd}
                 studentMap={studentMap}
                 nameToStudent={nameToStudent}
+                templateItems={templateItems}
                 onSlotChange={(si, patch) => onSlotChange(dayIndex, circuitIndex, si, patch)}
                 onChange={patch => onCircuitDayChange(dayIndex, circuitIndex, patch)}
               />
@@ -87,29 +92,17 @@ interface CircuitBlockProps {
   circuitDay: CircuitDay
   studentMap: Map<string, string>
   nameToStudent: Map<string, Student>
+  templateItems: TemplateItem[]
   onSlotChange: (slotIndex: number, patch: Partial<SlotAssignment>) => void
   onChange: (patch: Partial<CircuitDay>) => void
 }
 
-function CircuitBlock({ circuitDay, studentMap, nameToStudent, onSlotChange, onChange }: CircuitBlockProps) {
+function CircuitBlock({ circuitDay, studentMap, nameToStudent, templateItems, onSlotChange, onChange }: CircuitBlockProps) {
   const shift = circuitDay.shift ?? 'day'
+  const templateItemMap = new Map(templateItems.map(item => [item.name, item]))
 
   return (
     <div className={`schedule-circuit-block${shift === 'night' ? ' schedule-night' : ''}${circuitDay.edited ? ' schedule-circuit-edited' : ''}`}>
-      <div className="schedule-circuit-type">
-        <button
-          className={`schedule-type-btn${circuitDay.type === 'run' ? ' schedule-type-run' : ''}`}
-          onClick={() => onChange({ type: 'run', edited: true })}
-        >
-          Run
-        </button>
-        <button
-          className={`schedule-type-btn${circuitDay.type === 'assessment' ? ' schedule-type-assessment' : ''}`}
-          onClick={() => onChange({ type: 'assessment', edited: true })}
-        >
-          Assess
-        </button>
-      </div>
       <ul className="schedule-slots">
         {circuitDay.slots.map((slot, i) => {
           const displayName = slot.studentOverride ?? studentMap.get(slot.studentId) ?? slot.studentId
@@ -132,8 +125,17 @@ function CircuitBlock({ circuitDay, studentMap, nameToStudent, onSlotChange, onC
               />
               <input
                 className="input-sm schedule-slot-item"
+                list="schedule-template-items-list"
                 value={slot.itemName}
-                onChange={e => onSlotChange(i, { itemName: e.target.value, edited: true })}
+                onChange={e => {
+                  const val = e.target.value
+                  const match = templateItemMap.get(val)
+                  if (match) {
+                    onSlotChange(i, { itemName: val, itemType: match.type, edited: true })
+                  } else {
+                    onSlotChange(i, { itemName: val, edited: true })
+                  }
+                }}
               />
               <span className={`item-type-badge item-type-${slot.itemType} schedule-slot-activity`}>
                 {slot.itemType === 'assessment' ? 'A' : 'R'}

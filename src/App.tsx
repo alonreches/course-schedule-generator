@@ -337,6 +337,7 @@ export default function App() {
             students={scheduleStudents}
             instructors={instructors}
             simulators={simulators}
+            templateItems={courseConfig?.templateSnapshot.items ?? []}
             onSlotChange={(di, ci, si, patch) => handleSlotChange(activeWeekIndex, di, ci, si, patch)}
             onCircuitDayChange={(di, ci, patch) => handleCircuitDayChange(activeWeekIndex, di, ci, patch)}
             onCourseDayChange={(di, patch) => handleCourseDayChange(activeWeekIndex, di, patch)}
