@@ -44,6 +44,7 @@ export interface CourseDay {
   date: string;
   type: ActivityType;
   circuits: CircuitDay[];
+  notes?: string;
 }
 
 export interface CourseWeek {

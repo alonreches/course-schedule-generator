@@ -457,6 +457,12 @@ body {
   font-weight: 600;
 }
 
+.schedule-day-note {
+  font-size: 11px;
+  resize: vertical;
+  width: 100%;
+}
+
 .schedule-circuit-block {
   background: #ffd65c;
   display: flex;

@@ -7,7 +7,7 @@ import StatsTab from './StatsTab'
 import NamesTab from './NamesTab'
 import { scheduleGenerator } from './scheduleGenerator'
 import { weekTabLabel } from './weekTabLabel'
-import type { CircuitDay, CourseConfig, CourseSchedule, NamedTemplate, SlotAssignment, Student } from './types'
+import type { CircuitDay, CourseConfig, CourseDay, CourseSchedule, NamedTemplate, SlotAssignment, Student } from './types'
 
 function weekdaysInRange(startDate: string, endDate: string): string[] {
   const dates: string[] = []
@@ -237,6 +237,22 @@ export default function App() {
     })
   }
 
+  function handleCourseDayChange(weekIndex: number, dayIndex: number, patch: Partial<CourseDay>) {
+    setSchedule(prev => {
+      if (!prev) return prev
+      return {
+        weeks: prev.weeks.map((w, wi) =>
+          wi !== weekIndex ? w : {
+            ...w,
+            days: w.days.map((d, di) =>
+              di !== dayIndex ? d : { ...d, ...patch }
+            ),
+          }
+        ),
+      }
+    })
+  }
+
   function handleWeekTabClick(index: number) {
     setActiveWeekIndex(index)
     setContent('schedule')
@@ -323,6 +339,7 @@ export default function App() {
             simulators={simulators}
             onSlotChange={(di, ci, si, patch) => handleSlotChange(activeWeekIndex, di, ci, si, patch)}
             onCircuitDayChange={(di, ci, patch) => handleCircuitDayChange(activeWeekIndex, di, ci, patch)}
+            onCourseDayChange={(di, patch) => handleCourseDayChange(activeWeekIndex, di, patch)}
           />
         )}
         {content === 'names' && schedule && (

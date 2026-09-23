@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import type { CircuitDay, CourseWeek, SlotAssignment, Student } from './types'
+import type { CircuitDay, CourseDay, CourseWeek, SlotAssignment, Student } from './types'
 
 interface Props {
   week: CourseWeek
@@ -8,9 +8,10 @@ interface Props {
   simulators: string[]
   onSlotChange: (dayIndex: number, circuitIndex: number, slotIndex: number, patch: Partial<SlotAssignment>) => void
   onCircuitDayChange: (dayIndex: number, circuitIndex: number, patch: Partial<CircuitDay>) => void
+  onCourseDayChange: (dayIndex: number, patch: Partial<CourseDay>) => void
 }
 
-export default function ScheduleView({ week, students, instructors, simulators, onSlotChange, onCircuitDayChange }: Props) {
+export default function ScheduleView({ week, students, instructors, simulators, onSlotChange, onCircuitDayChange, onCourseDayChange }: Props) {
   const studentMap = new Map(students.map(s => [s.id, s.name]))
   const nameToStudent = new Map(students.map(s => [s.name, s]))
 
@@ -50,6 +51,13 @@ export default function ScheduleView({ week, students, instructors, simulators, 
               <span className={`item-type-badge item-type-${day.type}`}>
                 {day.type === 'assessment' ? 'Assessment' : 'Run'}
               </span>
+              <textarea
+                className="input-sm schedule-day-note"
+                value={day.notes ?? ''}
+                onChange={e => onCourseDayChange(dayIndex, { notes: e.target.value })}
+                placeholder="Day note"
+                rows={2}
+              />
             </div>
             {day.circuits.map((cd, circuitIndex) => (
               <CircuitBlock
