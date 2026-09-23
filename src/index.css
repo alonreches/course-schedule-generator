@@ -896,3 +896,48 @@ body {
   outline: none;
   border-color: #0070cc;
 }
+
+/* ── Print ── */
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    height: auto;
+    overflow: visible;
+  }
+
+  .app {
+    height: auto;
+  }
+
+  .tab-bar {
+    display: none;
+  }
+
+  .content {
+    overflow: visible;
+  }
+
+  .schedule-container {
+    height: auto;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .schedule-grid {
+    min-width: 0;
+  }
+
+  .schedule-controls {
+    display: none;
+  }
+}

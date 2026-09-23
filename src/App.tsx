@@ -286,6 +286,10 @@ export default function App() {
     })
   }
 
+  function handlePrint() {
+    window.print()
+  }
+
   function handleWeekTabClick(index: number) {
     setActiveWeekIndex(index)
     setContent('schedule')
@@ -363,6 +367,7 @@ export default function App() {
         <button className="ribbon-btn" onClick={handleOpen}>Open</button>
         <button className="ribbon-btn" onClick={handleSave} disabled={!schedule}>Save</button>
         <button className="ribbon-btn" onClick={handleSaveAs} disabled={!schedule}>Export</button>
+        <button className="ribbon-btn" onClick={handlePrint} disabled={content !== 'schedule'}>Print</button>
       </div>
       <main className="content">
         {content === 'templates' && <TemplatesScreen />}
